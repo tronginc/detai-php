@@ -1,0 +1,52 @@
+.product-detail {
+
+}
+
+.product-detail .logo {
+    width: 100%;
+    height: auto;
+}
+
+.product-detail .name {
+    font-size: 30px;
+    font-weight: bold;
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
+.product-detail .category {
+    font-size: 15px;
+    font-style: italic;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.product-detail .price {
+    font-size: 20px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.header-title {
+    padding: 5px 10px;
+    background-color: #F9F9F9;
+}
+
+.header-title h3 {
+    font-size: 20px;
+    margin-top: 5px;
+}
+
+.same-product {
+
+}
+
+.same-product .logo {
+    height: 65px;
+    width: 65px;
+}
+
+.manufacturer .logo {
+    height: 40px;
+    width: auto;
+}
