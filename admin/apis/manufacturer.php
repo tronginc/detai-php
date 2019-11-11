@@ -2,7 +2,7 @@
 if (isset($_POST['addManufacturer'])) {
     //Retrieve the field values from our registration form.
     if (!empty($_FILES["manufacturerLogo"]["name"])){
-        $name = $_POST['name'];
+        $name = htmlentities($_POST['name']);
         $url = $_POST['url'];
         $target_dir = "../assets/uploads/";
         $logo = 'manufacturer_' . round(microtime(true) * 1000) . '_' . basename($_FILES["manufacturerLogo"]["name"]);;

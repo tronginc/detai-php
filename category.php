@@ -11,6 +11,11 @@ echo '<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/p
 require './server/config.php';
 $products = array();
 
+if (!isset($_GET['id'])) {
+    header('Location: index.php');
+    exit;
+}
+
 $sql = "
     SELECT products.id, products.name, products.logo, minPrice.price, totalManufacturer, productUrl, minPrice.createdAt
     FROM products
@@ -42,10 +47,11 @@ $sql = "
         LEFT JOIN prices on minPriceAndMaxId.id = prices.id
     ) minPrice
     ON minPrice.productId = products.id
-    ORDER BY RAND()
-    LIMIT 8
+    WHERE products.categoryId = :categoryId
+   LIMIT 8
 ";
 $stmt = $pdo->prepare($sql);
+$stmt->bindValue(':categoryId', $_GET['id']);
 
 ?>
 <body>
@@ -83,7 +89,23 @@ $stmt = $pdo->prepare($sql);
             </div>
         </div>
         <hr />
-        <p class="title">SẢN PHẨM DÀNH CHO BẠN</p>
+        <p class="title"><?php
+            if ($_GET['id'] == 1){
+                echo 'ĐIỆN THOẠI';
+            }
+            if ($_GET['id'] == 2){
+                echo 'LAPTOP';
+            }
+            if ($_GET['id'] == 11){
+                echo 'MÁY TÍNH BẢNG';
+            }
+            if ($_GET['id'] == 12){
+                echo 'ĐỒNG HỒ';
+            }
+            if ($_GET['id'] == 13){
+                echo 'PHỤ KIỆN';
+            }
+            ?></p>
         <div class="row list-product-container">
             <?php
             if ($stmt->execute()) {

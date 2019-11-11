@@ -68,6 +68,11 @@ jQuery(function ($) {
     modal.find('.modal-title').text("Xóa \"" + button.data('name') + "\"");
     modal.find('.modal-body p').text("Bạn có chắc chắn muốn xóa nhà cung cấp \"" + button.data('name') + "\"?");
   });
+  $('#updatePrice').on('show.bs.modal', function (event) {
+    const button = $(event.relatedTarget);
+    const modal = $(this);
+    modal.find('.modal-body #id').val(button.data('id'));
+  });
 
   function updateUrlParameter(url, param, value){
     const regex = new RegExp('('+param+'=)[^\&]+');
@@ -83,6 +88,19 @@ jQuery(function ($) {
       url += '&orderBy='
     }else{
       url += '?orderBy='
+    }
+    url += $(this).val();
+    window.location.href = url;
+  });
+  $('#page').change(function() {
+    let url = window.location.href;
+    if (url.indexOf('&page=') > -1){
+      return window.location.href = updateUrlParameter(url, 'page', $(this).val());
+    }
+    if (url.indexOf('?') > -1){
+      url += '&page='
+    }else{
+      url += '?page='
     }
     url += $(this).val();
     window.location.href = url;

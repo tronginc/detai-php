@@ -1,33 +1,66 @@
 <?php
 $order = 'latest';
 if (isset($_GET['orderBy'])){
-    $order = $_GET['orderBy'];
+    $order = htmlspecialchars($_GET['orderBy']);
+}
+$page = 1;
+if (isset($_GET['page'])){
+    $page = $_GET['page'];
+}
+$search = '';
+if (isset($_GET['search'])){
+    $search = $_GET['search'];
 }
 $sql = "
-    SELECT products.id, products.name, products.logo, products.createdBy, products.createdAt, users.fullName, categories.name AS categoryName, categories.id AS categoryId , lastValue.price, lastValue.createdAt, counts.count
+    SELECT products.id, products.name, products.logo, products.createdBy, products.createdAt, users.fullName, categories.name AS categoryName, categories.id AS categoryId , minPrice.price, minPrice.createdAt, counts.count
     FROM products 
     LEFT JOIN users ON products.createdBy = users.id 
     LEFT JOIN categories ON products.categoryId = categories.id
     LEFT JOIN (
-        SELECT prices.createdAt, price, prices.productId 
-        FROM (SELECT productId, MAX(createdAt) createdAt
-             FROM prices
-             GROUP BY productId
-             ) latest
-        JOIN prices
-        ON latest.productId = prices.productId AND prices.createdAt = latest.createdAt
-    ) lastValue
-    ON lastValue.productId = products.id
+        SELECT prices.* FROM (
+            SELECT MAX(id) id, productId FROM (
+                SELECT prices.* FROM (
+                    SELECT productId, MIN(lastValue.price) price
+                    FROM (
+                        SELECT prices.*
+                            FROM (
+                                SELECT productId, manufacturerId ,MAX(createdAt) createdAt
+                                FROM prices
+                                GROUP BY productId, manufacturerId
+                            ) latest
+                            LEFT JOIN prices ON latest.productId = prices.productId AND prices.createdAt = latest.createdAt AND prices.manufacturerId = latest.manufacturerId               
+                        ) lastValue 
+                    GROUP BY lastValue.productId
+                ) latestMinPrice
+                LEFT JOIN prices on prices.price = latestMinPrice.price 
+            ) maxId
+            GROUP BY productId
+        ) minPriceAndMaxId
+        LEFT JOIN prices on minPriceAndMaxId.id = prices.id
+    ) minPrice
+    ON minPrice.productId = products.id
     LEFT JOIN (
-        SELECT productId, COUNT(DISTINCT ProductId) AS count FROM prices GROUP BY prices.productId
-        ) counts 
+        SELECT productId, COUNT(DISTINCT manufacturerId) AS count FROM prices GROUP BY prices.productId
+    ) counts 
     ON counts.productId = products.id
+    WHERE products.name LIKE :search
     ORDER BY products.createdAt " . ($order == 'latest' ? 'DESC' : 'ASC') . "
+    LIMIT 8 OFFSET :o
 ";
 $stmt = $pdo->prepare($sql);
+$stmt->bindValue(':o', ($page - 1) * 8);
+$stmt->bindValue(':search', "%" . $search . "%");
 
 $sqlCategory = "SELECT * from categories";
 $stmtCategory = $pdo->prepare($sqlCategory);
+$sqlManufacturer = "SELECT * from manufacturers";
+$stmtManufacturer = $pdo->prepare($sqlManufacturer);
+
+$sqlTotal= "SELECT COUNT(*) from products";
+$stmtTotal = $pdo->prepare($sqlTotal);
+$stmtTotal->execute();
+$number_of_rows = $stmtTotal->fetchColumn();
+$totalPage = round($number_of_rows/ 8) + 1;
 ?>
 <main class="page-content">
     <div class="container-fluid">
@@ -41,6 +74,20 @@ $stmtCategory = $pdo->prepare($sqlCategory);
                 <option value="latest" <?php if ($order == "latest") echo "selected"?>>Mới nhất</option>
                 <option value="oldest" <?php if ($order == "oldest") echo "selected"?>>Cũ nhất</option>
             </select>
+            <select id="page" name="orderBy" style="height: 30px; margin-top: 8px; margin-left: 10px">
+                <?php
+                    for( $i= 1 ; $i <= $totalPage ; $i++ ){
+                        echo '<option value="'.$i.'" '. ($page == $i ? 'selected' : '') .'>Trang '.$i.'</option>';
+                    }
+                ?>
+            </select>
+            <form action="/admin/index.php?action=product" method="POST">
+                <input autocomplete="off" value="<?php echo $search?>" id="search" name="search" type="text" style="height: 30px; margin-top: 8px; margin-left: 10px; width: auto" class="form-control" placeholder="Tìm kiếm sản phẩm" aria-describedby="basic-addon1">
+                <input type="submit"
+                       name="searchProduct" id="searchProduct"
+                       style="position: absolute; left: -9999px; width: 1px; height: 1px;"
+                       tabindex="-1" />
+            </form>
         </div>
         <hr>
         <div class="row">
@@ -59,8 +106,8 @@ $stmtCategory = $pdo->prepare($sqlCategory);
                                     <p class="card-title">' . ($row['price'] ? number_format($row['price'], 0, ',', '.') . ' đ' : 'Chưa cập nhật') . '</p>
                                     <p class="card-title">' . ($row['count'] ? $row['count'] : 'Chưa có') . ' nơi bán</p>
                                     <p class="card-title">Cập nhật lần cuối: ' . ($row['createdAt'] ? date_format(date_create($row['createdAt'], timezone_open('Asia/Ho_Chi_Minh')), "H:i:s d/m/Y") : 'Chưa cập nhật') . '</p>
-                                    <a href="https://github.com/azouaoui-med/angular-pro-sidebar" target="_blank" class="btn btn-block btn-primary btn-sm"><i class="fa fa-chart-bar"></i> Xem chi tiết</a>
-                                    <a href="https://azouaoui-med.github.io/angular-pro-sidebar/demo/" target="_blank" class="btn btn-block btn-success btn-sm"><i class="fa fa-sync-alt"></i> Cập nhật giá</a>
+                                    <a href="/product.php?id='. $row['id'] .'" target="_blank" class="btn btn-block btn-primary btn-sm"><i class="fa fa-chart-bar"></i> Xem chi tiết</a>
+                                    <button data-toggle="modal" data-target="#updatePrice" data-id="' . $row['id'] . '" class="btn btn-block btn-success btn-sm"><i class="fa fa-sync-alt"></i> Cập nhật giá</button>
                                 </div>
                             </div>
                         </div>';
@@ -186,6 +233,58 @@ $stmtCategory = $pdo->prepare($sqlCategory);
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
                         <button type="submit" id="deleteProduct" name="deleteProduct" class="btn btn-danger">Xóa</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="updatePrice" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Cập nhật giá</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form method="POST" action="/admin/index.php?action=product" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <input id="id" name="id" hidden aria-label="" value="" />
+                        <div class="form-group">
+                            <label for="recipient-name" class="col-form-label">Giá sản phẩm</label>
+                            <input type="text" class="form-control" id="price" name="price">
+                        </div>
+                        <div class="form-group">
+                            <label for="recipient-name" class="col-form-label">Địa chỉ trang web</label>
+                            <input type="text" class="form-control" id="productUrl" name="productUrl">
+                        </div>
+                        <div class="form-group">
+                            <label for="recipient-name" class="col-form-label">Nhà cung cấp</label>
+                            <label for="categoryId"></label><select name="manufacturerId" class="custom-select" id="manufacturerId">
+                                <?php
+                                if ($stmtManufacturer->execute()) {
+                                    $index = 0;
+                                    while ($row = $stmtManufacturer->fetch(PDO::FETCH_ASSOC)) {
+                                        $index += 1;
+                                        echo '<option value="'. $row['id'] .'">'. $row['name'] .'</option>';
+                                    }
+                                }
+                                ?>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="recipient-name" class="col-form-label">ShopId</label>
+                            <input type="text" class="form-control" id="manufacturerShopId" name="manufacturerShopId">
+                        </div>
+                        <div class="form-group">
+                            <label for="recipient-name" class="col-form-label">Mã sản phẩm</label>
+                            <input type="text" class="form-control" id="manufacturerProductId" name="manufacturerProductId">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                        <button type="submit" name="updatePrice" id="updatePrice" class="btn btn-primary">Cập nhật giá</button>
                     </div>
                 </form>
             </div>

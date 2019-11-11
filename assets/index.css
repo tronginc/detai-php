@@ -13,6 +13,12 @@
 
 .menu-item {
     padding: 10px;
+    background-color: #F9F9F9;
+}
+
+.menu-item img {
+    height: 30px;
+    width: 30px;
 }
 
 .header {
@@ -61,8 +67,15 @@
     margin-top: 10px;
 }
 .title {
-    font-size: 20px;
+    font-size: 18px;
+    max-height: 40px;
+    line-height: 20px;
     font-weight: bold;
+    display: block; /* or inline-block */
+    text-overflow: ellipsis;
+    word-wrap: break-word;
+    overflow: hidden;
+    color: #000000;
 }
 
 .list-search {
@@ -85,14 +98,17 @@
     position: relative;
 }
 .item-search {
-    padding: 2px 5px;
+    padding: 5px 5px;
+    background-color: #FFFFFF;
+    border-top: #e8eef1 1px solid;
 }
 .item-search a {
     color: #000000;
+    margin-top: 2px;
 }
 .item-search-logo {
-    height: 15px;
-    width: 15px;
+    height: 25px;
+    width: 25px;
 }
 
 .item-search .category {

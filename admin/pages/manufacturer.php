@@ -23,7 +23,7 @@ $stmt = $pdo->prepare($sql);
                 <th scope="col"><i class="fa fa-link"></i> Website</th>
                 <th scope="col"><i class="fa fa-user"></i> Người tạo</th>
                 <th scope="col" class="fit"><i class="fa fa-calendar"></i> Ngày tạo</th>
-                <th scope="col" class="fit"><i class="fa fa-inbox"></i> Số sản phẩm</th>
+<!--                <th scope="col" class="fit"><i class="fa fa-inbox"></i> Số sản phẩm</th>-->
                 <th scope="col" class="fit"><i class="fa fa-cogs"></i> Hành động</th>
             </tr>
             </thead>
@@ -40,7 +40,6 @@ $stmt = $pdo->prepare($sql);
                             <td><a target="_blank" href="' . $row['url'] . '">' . $row['url'] . '</a></td>
                             <td>' . $row['fullName'] . '</td>
                             <td class="fit">' . date_format(date_create($row['createdAt'], timezone_open('Asia/Ho_Chi_Minh')), "H:i:s d/m/Y") . '</td>
-                            <td class="text-right">0</td>
                             <td class="fit">
                                 <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#updateManufacturer" data-id="' . $row['id'] . '" data-name="' . $row['name'] . '" data-url="' . $row['url'] . '"><i class="fa fa-pencil-alt"></i> Sửa</button>
                                 <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteManufacturer" data-id="' . $row['id'] . '" data-name="' . $row['name'] . '"><i class="fa fa-trash"></i> Xóa</button>

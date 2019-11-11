@@ -107,6 +107,7 @@ class restful_api {
         $status = array(
             200 => 'OK',
             404 => 'Not Found',
+            403 => 'Forbidden',
             405 => 'Method Not Allowed',
             500 => 'Internal Server Error'
         );

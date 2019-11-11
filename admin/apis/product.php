@@ -132,16 +132,65 @@ if (isset($_POST['updateProduct']) && isset( $_POST['id'] ) && is_numeric( $_POS
 }
 if( isset($_POST['deleteProduct']) )
 {
-    if(isset( $_POST['id'] ) && is_numeric( $_POST['id'] ) && $_POST['id'] > 0 )
-    {
-        $id = $_POST['id'];
-        $stmt = $pdo->prepare( "DELETE FROM products WHERE id =:id" );
-        $stmt->bindParam(':id', $id);
-        $stmt->execute();
-        if( ! $stmt->rowCount() ) $error_message = 'Không thể xóa danh mục';
+    try {
+        if(isset( $_POST['id'] ) && is_numeric( $_POST['id'] ) && $_POST['id'] > 0 )
+        {
+            $id = $_POST['id'];
+            $stmt = $pdo->prepare( "DELETE FROM products WHERE id =:id" );
+            $stmt->bindParam(':id', $id);
+            $stmt->execute();
+            if( ! $stmt->rowCount() ) $error_message = 'Không thể xóa sản phẩm';
+        }
+        else
+        {
+            $error_message = 'Không thể xóa sản phẩm.';
+        }
     }
-    else
-    {
-        $error_message = 'Không thể xóa danh mục.';
+    catch (Exception $e){
+        $error_message = 'Không thể xóa sản phẩm.';
     }
+}
+
+if( isset($_POST['updatePrice']) )
+{
+    try {
+        if(isset( $_POST['id'] ) && is_numeric( $_POST['id'] ) && $_POST['id'] > 0 )
+        {
+            $id = $_POST['id'];
+            $sql = "INSERT INTO prices (productId, price, manufacturerProductId, manufacturerShopId, productUrl, manufacturerId, createdBy, createdAt)
+                    values (:productId, :price, :manufacturerProductId, :manufacturerShopId, :productUrl, :manufacturerId, :createdBy, :createdAt)
+                    ";
+            $stmt = $pdo->prepare( $sql);
+            $stmt->bindParam(':productId', $_POST['id']);
+            $stmt->bindParam(':price', $_POST['price']);
+            $manufacturerProductId = isset($_POST['manufacturerProductId']) ? $_POST['manufacturerProductId'] : null;
+            $stmt->bindParam(':manufacturerProductId', $manufacturerProductId);
+            $manufacturerShopId = isset($_POST['manufacturerShopId']) ? $_POST['manufacturerShopId'] : null;
+            $stmt->bindParam(':manufacturerShopId', $manufacturerShopId);
+            $stmt->bindParam(':productUrl', $_POST['productUrl']);
+            $stmt->bindParam(':manufacturerId', $_POST['manufacturerId']);
+            $stmt->bindParam(':createdBy', $_SESSION['user_id']);
+            $tz = 'Asia/Ho_Chi_Minh';
+            $timestamp = time();
+            try {
+                $dt = new DateTime("now", new DateTimeZone($tz));
+            } catch (Exception $e) {
+            } //first argument "must" be a string
+            $dt->setTimestamp($timestamp); //adjust
+            $createdAt = $dt->format("Y-m-d H:i:s");
+            $stmt->bindParam(':createdAt', $createdAt);
+            $stmt->execute();
+            if( ! $stmt->rowCount() ) $error_message = 'Không thể cập nhật giá';
+        }
+        else
+        {
+            $error_message = 'Không thể cập nhật giá.';
+        }
+    }
+    catch (Exception $e){
+        $error_message = 'Không thể cập nhật giá.';
+    }
+}
+if( isset($_POST['searchProduct'])  && isset($_POST['search'])){
+    header('Location: index.php?action=product&search='.$_POST['search']);
 }

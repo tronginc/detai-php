@@ -2,7 +2,7 @@
 if (isset($_POST['addCategory'])) {
     //Retrieve the field values from our registration form.
     if (!empty($_FILES["categoryLogo"]["name"])){
-        $name = $_POST['name'];
+        $name = htmlentities($_POST['name']);
         $target_dir = "../assets/uploads/";
         $logo = 'category_' . round(microtime(true) * 1000) . '_' . basename($_FILES["categoryLogo"]["name"]);;
         $target_file = $target_dir . $logo;
@@ -26,8 +26,8 @@ if (isset($_POST['addCategory'])) {
                 $stmt = $pdo->prepare($sql);
 
                 //Bind our variables.
-                $stmt->bindValue(':name', $name);
-                $stmt->bindValue(':logo', $logo);
+                $stmt->bindValue(':name', $name, PDO::PARAM_STR);
+                $stmt->bindValue(':logo', $logo, PDO::PARAM_STR);
                 $stmt->bindValue(':createdAt', $createdAt);
                 $stmt->bindValue(':createdBy', $createdBy);
 
